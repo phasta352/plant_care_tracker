@@ -23,24 +23,71 @@ Both require API key as parameter.
 Response is JSON with plant data.
 """
 
-# ---------------------------------------------
-# THE CODE SKELETON
-
-# Import necessary libraries
-# (requests for API, pandas for CSV, os/dotenv for API key)
+import requests
+import os
+from dotenv import load_dotenv
 
 
 # Load API key from .env
-
+load_dotenv()
+API_KEY = os.getenv('PERENUAL_API_KEY')
 
 # Define API base URL and key
+if not API_KEY:
+    raise RuntimeError("PERENUAL_API_KEY is not set. Add it to your .env file.")
 
+BASE_URL = os.getenv('PERENUAL_BASE_URL')
 
 # Function to search for plants by name
+def search_plants(query):
+    url = f"{BASE_URL}/species-list"
+    params = {
+        'key': API_KEY,
+        'q': query
+    }
 
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    return None
 
 # Build search URL
+def get_plant_details(plant_id):
+    url = f"{BASE_URL}/species/details/{plant_id}"
+    params = {'key': API_KEY}
 
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+
+print("Plant Database Explorer")
+print("========================\n")
+
+while True:
+    print("\n1. Search for a plant")
+
+    choice = input("\nChoice: ")
+
+    if choice == '1':
+        query = input("\nEnter plant name: ")
+        print(f"\nSearching for '{query}'...")
+
+        results = search_plants(query)
+
+        if results and results.get('data'):
+            plants = results['data'][:5]
+
+            print(f"\nFound {len(plants)} matching plants:\n")
+
+            for idx, plant in enumerate(plants, 1):
+                print(
+                    f"{idx}. {plant.get('common_name', 'Unknown')} ({plant.get('scientific_name', [''])[0] if isinstance(plant.get('scientific_name'), list) else plant.get('scientific_name', 'Unknown')})")
+        else:
+            print("No plants found. Try a different search term.")
+    else:
+        print("Invalid choice. Please try again.")
 
 # Make API request
 
